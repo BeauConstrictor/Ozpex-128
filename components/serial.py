@@ -2,7 +2,6 @@ import sys
 
 from components.mm_component import MemoryMappedComponent
 
-
 if sys.platform.startswith("win"):
     import msvcrt
 
@@ -32,7 +31,7 @@ else:
     
     atexit.register(lambda: termios.tcsetattr(fd, termios.TCSADRAIN, old_settings))
 
-class SerialOutput(MemoryMappedComponent):
+class SerialPort(MemoryMappedComponent):
     def __init__(self, addr: int) -> None:
         self.addr = addr
         

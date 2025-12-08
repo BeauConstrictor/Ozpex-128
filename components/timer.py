@@ -1,6 +1,5 @@
 from components.mm_component import MemoryMappedComponent
 
-from sys import stdout
 import time
 
 def break_word(word: int) -> tuple[int, int]:

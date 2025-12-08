@@ -1,5 +1,4 @@
-/rom
-/slot1
-/vasm
 __pycache__
 *.pyc
+*.bin
+*.img

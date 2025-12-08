@@ -157,7 +157,7 @@ class MachineView(tk.Frame):
         if not stdout_serial:
             crt = shutil.which("cool-retro-term")
             if not crt:
-                messagebox.showerror("Error", "Ozpex 64 requires Cool Retro Term "
+                messagebox.showerror("Error", "Ozpex 128 requires Cool Retro Term "
                                     "to be installed and in the system PATH.")
                 return
             
@@ -185,7 +185,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         
-        self.title("Ozpex 64")
+        self.title("Ozpex 128")
         self.geometry("700x500")
 
         self.menubar = tk.Menu(self)
