@@ -9,7 +9,7 @@ from components.ram import Ram
 from components.rom import Rom
 from components.timer import Timer
 from components.serial import SerialPort
-from components.disk import Disk
+from components.disk import DiskSlot
 from components.mm_component import MemoryMappedComponent
 
 def parse_args() -> argparse.Namespace:
@@ -23,7 +23,21 @@ def parse_args() -> argparse.Namespace:
                         default=os.path.join(os.path.dirname(os.path.realpath(__file__)), "bin", "bios"),
                         help="overwrite the default bios rom")
     
-    parser.add_argument("-d", "--debug",
+    for i in range(256):
+        parser.add_argument(
+            f'--disk{i}',
+            f'-{i}',
+            type=str,
+            default=None,
+            help=argparse.SUPPRESS,
+        )
+        
+    parser.add_argument("-X", "--diskX",
+                        action="store_true",
+                        help="load a disk image into disk slot X")
+
+    
+    parser.add_argument("--debug",
                         action="store_true",
                         help="watch the emulator execute individual instructions")
     
@@ -37,7 +51,7 @@ def parse_args() -> argparse.Namespace:
     
     return parser.parse_args()
 
-def create_machine(rom: str) -> Cpu:
+def create_machine(args: argparse.Namespace) -> Cpu:
 
     # MEMORY MAP:
     # $0000 - $BFFF: RAM
@@ -48,7 +62,8 @@ def create_machine(rom: str) -> Cpu:
     #  > $C000:         SERIAL PORT
     #  > $C001:         TIMER REG A
     #  > $C002:         TIMER REG B
-    #  > $C003:         DISK SECTOR SELECTOR
+    #  > $C003:         DISK SECTOR
+    #  > $C004:         DISK SELECT
     #  > $C005:         DISK STATUS
     #  > $C006 - $C0FF: FUTURE USE
     #  > $C100 - $C1FF: DISK SECTOR DATA
@@ -57,15 +72,22 @@ def create_machine(rom: str) -> Cpu:
     
     cpu = Cpu({
         "ram": Ram(0x0000, 0xbfff),
-        "serial": SerialPort(0xc0000),
+        "serial": SerialPort(0xc000),
         "timer": Timer(0xc001, 0xc002),
-        "disk": Disk(sector=0xc003, status=0xc005, readout=0xc100, data=None),
+        "diskslot": DiskSlot(sector=0xc003, status=0xc005, selector=0xc004, readout=0xc100),
         "rom": Rom(0xe000, 0xffff),
     })
 
-    with open(rom, "rb") as f:
-        rom_data = list(f.read())
-    cpu.mm_components["rom"].load(rom_data, cpu.mm_components["rom"].start)
+    with open(args.bios, "rb") as f:
+        bios_data = list(f.read())
+    cpu.mm_components["rom"].load(bios_data, cpu.mm_components["rom"].start)
+    
+    for i in range(256):
+        disk_path = getattr(args, f'disk{i}')
+        if disk_path is not None:
+            with open(disk_path, "rb") as f:
+                disk_data = list(f.read())
+            cpu.mm_components["diskslot"].disks[i] = disk_data
     
     cpu.reset()
     
@@ -101,7 +123,7 @@ def main() -> None:
         gui.main.App().mainloop()
         return
     
-    cpu = create_machine(args.bios)
+    cpu = create_machine(args)
     
     cycle = 0
     for _ in simulate(cpu, args.nocrash, args.debug):

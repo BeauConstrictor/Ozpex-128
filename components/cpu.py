@@ -562,7 +562,7 @@ class Cpu:
         
     def resolve_component(self, addr: int) -> MemoryMappedComponent:
         c = self.mm_component_map[addr]
-        if c is None: raise IndexError("Unmapped memory area accessed.")
+        if c is None: raise IndexError(f"Unmapped memory area accessed (${addr:04x}).")
         return c
     
     def fetch(self, addr: int) -> int:
