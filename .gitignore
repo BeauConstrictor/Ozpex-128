@@ -2,3 +2,6 @@ __pycache__
 *.pyc
 *.bin
 *.img
+bin/
+bin/*
+vasm6502_oldstyle

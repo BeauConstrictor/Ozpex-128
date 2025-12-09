@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
     )
                          
     parser.add_argument("-b", "--bios",
-                        default=os.path.join(os.path.dirname(os.path.realpath(__file__)), "roms", "monitor.bin"),
+                        default=os.path.join(os.path.dirname(os.path.realpath(__file__)), "bin", "bios"),
                         help="overwrite the default bios rom")
     
     parser.add_argument("-d", "--debug",
@@ -41,6 +41,9 @@ def create_machine(rom: str) -> Cpu:
 
     # MEMORY MAP:
     # $0000 - $BFFF: RAM
+    #  > $0000 - $00ff: ZERO PAGE
+    #  > $0100 - $01ff: HARDWARE STACK
+    #  > $0200 - $02ff: BOOTLOADER
     # $C000 - $C1FF: I/O BLOCK
     #  > $C000:         SERIAL PORT
     #  > $C001:         TIMER REG A
@@ -50,7 +53,7 @@ def create_machine(rom: str) -> Cpu:
     #  > $C006 - $C0FF: FUTURE USE
     #  > $C100 - $C1FF: DISK SECTOR DATA
     # $C200 - DFFF: UNMAPPED
-    # $E000 - FFFF: BOOTLOADER/BIOS ROM
+    # $E000 - FFFF: BIOS ROM
     
     cpu = Cpu({
         "ram": Ram(0x0000, 0xbfff),
@@ -62,7 +65,7 @@ def create_machine(rom: str) -> Cpu:
 
     with open(rom, "rb") as f:
         rom_data = list(f.read())
-    cpu.mm_components["rom"].load(rom_data, 0xc003)
+    cpu.mm_components["rom"].load(rom_data, cpu.mm_components["rom"].start)
     
     cpu.reset()
     
@@ -78,9 +81,9 @@ def simulate(cpu: Cpu, nocrash: bool, debug: bool) -> Iterator[None]:
                        
         except NotImplementedError as e:    
             if nocrash: continue
-            print("\n\n\033[31m", end="")
-            print(f"6502: {e}, execution aborted.", end="")
-            print("\033[0m")
+            print("\n\n\033[31m", end="", file=stderr)
+            print(f"emu: {e}, execution aborted.", end="", file=stderr)
+            print("\033[0m", file=stderr)
             exit(1)
         if debug:
             cpu.visualise(instr)
@@ -89,12 +92,16 @@ def simulate(cpu: Cpu, nocrash: bool, debug: bool) -> Iterator[None]:
 def main() -> None:
     args = parse_args()
     
+    if not os.path.exists(args.bios):
+        print("\033[31memu: cannot find the bios rom.\033[0m", file=stderr)
+        exit(1)
+    
     if args.gui:
         import gui.main
         gui.main.App().mainloop()
         return
     
-    cpu = create_machine(args.rom)
+    cpu = create_machine(args.bios)
     
     cycle = 0
     for _ in simulate(cpu, args.nocrash, args.debug):
@@ -108,7 +115,7 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\n\033[31m", end="")
-        print(f"emu: ctrl+c exit.", end="")
-        print("\033[0m")
+        print("\n\n\033[31m", end="", file=stderr)
+        print(f"emu: ctrl+c exit.", end="", file=stderr)
+        print("\033[0m", file=stderr)
         exit(0)
