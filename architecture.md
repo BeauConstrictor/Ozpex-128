@@ -14,13 +14,13 @@ Sandwiched between these at `$C000` to `C1FF` (inclusive) is the device space.
 
 #### Serial Devices
 
-The lower 256 bytes of this space contain the serial devices, which are mapped to physical serial ports which single bytes can be read from and written to. These devices have no standard way of identifying themselves so they should only be used at a user's discression. For instance, after selecting to print a file, the user could be presented with a prompt asking which serial port to send the data to, and the program would send the raw ASCII bytes of the file over the chosen port.
+The lower 256 bytes of this space contain the serial devices, which are mapped to physical serial ports which single bytes can be read from and written to.
 
 Serial device `00` (address `$C000`) is the standard I/O port and is typically connected to a serial terminal.
 
 The next two serial devices are combined to form a hardware timer and work in the same way as the 64's timer.
 
-Serial devices `06-FF` (inclusive) represent miscellaneous serial ports, and a motherboard may or may not map these addresses to any number of physical ports.
+Serial devices `06-FF` (inclusive) represent miscellaneous serial ports, and a motherboard may or may not map these addresses to any number of physical ports. These ports should be used in one way: sending and recieving ASCII bytes for whatever the user connects to the port (usually a printer). Since there is no way to know if anything is actually wired to these addresses, they should only be used at a user's discression. For example, a user might connect a printer to a serial port labeled `06` on their computer, and they could then tell a program to print to port `06`. The program would then write the characters of the text file to address `$C006` sequentially.
 
 #### Block Devices
 
