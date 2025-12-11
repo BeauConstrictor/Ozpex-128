@@ -1,7 +1,10 @@
   .org $e000
 
 BOOT_LOADER = $0200 ; -> $02ff
+
 SERIAL_PORT = $c000
+TIMER_PORTA = $c001
+TIMER_PORTB = $c002
 DISK_SECTOR = $c003
 DISK_SELECT = $c004
 DISK_STATUS = $c005
@@ -9,9 +12,18 @@ DISK_DATA   = $c100
 
 PRINT      =   $50
 
-reset:
-  jsr find_bootable_disk
+ESCAPE_WAIT = 1 ; seconds
 
+reset:
+  lda #<press_esc_msg
+  sta PRINT
+  lda #>press_esc_msg
+  sta PRINT+1
+  jsr print
+
+  jsr wait_for_esc
+
+  jsr find_bootable_disk
   lda #<disk_found_msg
   sta PRINT
   lda #>disk_found_msg
@@ -27,6 +39,8 @@ skip_leading_zero:
   sty SERIAL_PORT
   
   lda #"."
+  sta SERIAL_PORT
+  sta SERIAL_PORT
   sta SERIAL_PORT
   lda #"\n"
   sta SERIAL_PORT
@@ -67,16 +81,70 @@ _load_bootloader_loop:
 
   rts
 
+wait_for_esc:
+  lda #255
+  sta TIMER_PORTB
+  sta TIMER_PORTA
+_wait_for_esc_loop:
+  lda SERIAL_PORT
+  cmp #"\033"
+  beq bios_menu
+  lda TIMER_PORTA
+  cmp #ESCAPE_WAIT*4
+  bcc _wait_for_esc_loop
+  rts
+
+bios_menu:
+  lda #<bios_menu_msg
+  sta PRINT
+  lda #>bios_menu_msg
+  sta PRINT+1
+  jsr print
+
+  jsr list_devices
+
+  jmp halt
+
+list_devices:
+  lda #0
+  sta DISK_SELECT
+_list_devices_loop:
+  lda DISK_STATUS
+  beq _list_devices_nothing_installed
+  
+  lda DISK_SELECT
+  jsr hex_byte
+  stx SERIAL_PORT
+  sty SERIAL_PORT
+
+  lda DISK_STATUS
+  lsr
+  lsr
+  lsr
+  lsr
+  tax
+  lda device_id_table_low,x
+  sta PRINT
+  lda device_id_table_high,x
+  sta PRINT+1
+  jsr print
+_list_devices_nothing_installed:
+  inc DISK_SELECT
+  bne _list_devices_loop
+  lda #"\n"
+  sta SERIAL_PORT
+  rts
+
 halt:
-  jmp halt  
+  jmp halt
 
 
 ; wait until the current block device is not busy
 ; modifies: a
 busy_wait:
-  lda $c005     ; read the device status
+  lda $c005      ; read the device status
   and #%00000010 ; check the busy flag
-  bne busy_wait ; keep checking if the device is busy
+  bne busy_wait  ; keep checking if the device is busy
   rts
 
 ; return (in a) the a register as hex
@@ -124,10 +192,35 @@ _print_done:
   rts
 
 
+; strings
+
 disk_not_found_msg:
   .byte "No boot device found.", 0
 disk_found_msg:
   .byte "Booting disk ", 0
+press_esc_msg:
+  .byte "Press ESC to enter the BIOS menu.\n", 0
+bios_menu_msg:
+  .byte "Ozpex 128 Emulator BIOS v0.1.0\nInstalled Devices:\n\n", 0
+
+
+
+; device type names
+
+device_id_table_low:
+  .byte 0
+  .byte <sectored_storage_name
+  .byte <xmem_name
+device_id_table_high:
+  .byte 0
+  .byte >sectored_storage_name
+  .byte >xmem_name
+
+sectored_storage_name:
+  .byte ": Sectored Storage\n", 0
+xmem_name:
+  .byte ": Extended Memory\n", 0
+
 
   .org $fffc
   .word reset

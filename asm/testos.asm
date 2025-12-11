@@ -23,10 +23,8 @@ timer:
 
   jsr print
   sty LAST_TIMER
-  
-  lda SERIAL
-  beq timer
-  rts
+
+  jmp timer
 
 print:
   ldx #0
