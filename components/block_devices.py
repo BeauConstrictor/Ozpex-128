@@ -4,9 +4,12 @@ from random import randint
 
 from components.mm_component import MemoryMappedComponent
 
-SECTORED_STORAGE = 1 << 4
-EXTENDED_MEMORY  = 2 << 4
-IS_BOOTABLE      = 0b0100
+SECTORED_STORAGE  = 1 << 4
+EXTENDED_MEMORY   = 2 << 4
+
+IS_BOOTABLE       = 1 << 2
+IS_BUSY           = 1 << 1
+IS_MALFUNCTIONING = 1 << 0
 
 class BlockDevice(ABC):
     @abstractmethod
