@@ -9,8 +9,14 @@ from components.ram import Ram
 from components.rom import Rom
 from components.timer import Timer
 from components.serial import SerialPort
-from components.disk import DiskSlot
+from components.block_devices import BootableDrive, NonBootableDrive, \
+    BlockDeviceInterface
 from components.mm_component import MemoryMappedComponent
+
+device_types = {
+    "boot": BootableDrive,
+    "hdd": NonBootableDrive
+}
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -25,16 +31,15 @@ def parse_args() -> argparse.Namespace:
     
     for i in range(256):
         parser.add_argument(
-            f'--disk{i}',
+            f'--slot{i}',
             f'-{i}',
             type=str,
             default=None,
             help=argparse.SUPPRESS,
         )
         
-    parser.add_argument("-X", "--diskX",
-                        action="store_true",
-                        help="load a disk image into disk slot X")
+    parser.add_argument("-X", "--slotX",
+                        help="insert a device into a virtual expansion slot")
 
     
     parser.add_argument("--debug",
@@ -75,7 +80,8 @@ def create_machine(args: argparse.Namespace) -> Cpu:
         "ram": Ram(0x0000, 0xbfff),
         "serial": SerialPort(0xc000),
         "timer": Timer(0xc001, 0xc002),
-        "diskslot": DiskSlot(sector=0xc003, status=0xc005, selector=0xc004, readout=0xc100),
+        "blockdevs": BlockDeviceInterface(sector=0xc003, status=0xc005,
+                                         selector=0xc004, readout=0xc100),
         "rom": Rom(0xe000, 0xffff),
     })
 
@@ -84,11 +90,15 @@ def create_machine(args: argparse.Namespace) -> Cpu:
     cpu.mm_components["rom"].load(bios_data, cpu.mm_components["rom"].start)
     
     for i in range(256):
-        disk_path = getattr(args, f'disk{i}')
-        if disk_path is not None:
-            with open(disk_path, "rb") as f:
-                disk_data = list(f.read())
-            cpu.mm_components["diskslot"].disks[i] = disk_data
+        literal = getattr(args, f'slot{i}')
+        if literal is None: continue
+        device_type = literal.split(":")[0]
+        device_arg = ":".join(literal.split(":")[1:])
+        try:
+            cpu.mm_components["blockdevs"].devices[i] = device_types[device_type](device_arg)
+        except KeyError:
+            print(f"emu: '{device_type}' is not a supported device type.", file=stderr)
+            exit(1)
     
     cpu.reset()
     
