@@ -11,8 +11,6 @@ PRINT      =   $50
 
 reset:
   jsr find_bootable_disk
-  jsr load_bootloader
-
 
   lda #<disk_found_msg
   sta PRINT
@@ -33,7 +31,8 @@ skip_leading_zero:
   lda #"\n"
   sta SERIAL_PORT
   sta SERIAL_PORT
-  
+
+  jsr load_bootloader  
   jmp BOOT_LOADER
 
 find_bootable_disk:
@@ -41,7 +40,8 @@ find_bootable_disk:
   sta DISK_SELECT
 _find_bootable_disk_loop:
   lda DISK_STATUS
-  bne _find_bootable_disk_success
+  cmp #%00010100
+  beq _find_bootable_disk_success
   inc DISK_SELECT
   bne _find_bootable_disk_loop
   lda #<disk_not_found_msg
@@ -56,6 +56,7 @@ _find_bootable_disk_success:
 load_bootloader:
   lda #0
   sta DISK_SECTOR
+  jsr busy_wait
 
   ldx #0
 _load_bootloader_loop:
@@ -69,6 +70,14 @@ _load_bootloader_loop:
 halt:
   jmp halt  
 
+
+; wait until the current block device is not busy
+; modifies: a
+busy_wait:
+  lda $c005     ; read the device status
+  and #%00000010 ; check the busy flag
+  bne busy_wait ; keep checking if the device is busy
+  rts
 
 ; return (in a) the a register as hex
 ; modifies: a (duh)

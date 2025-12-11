@@ -28,7 +28,7 @@ class DiskSlot(MemoryMappedComponent):
         
         if addr == self.status_addr:
             status = 0b00000000
-            if self.disks[self.disk] is not None: status |= 0b00000001
+            if self.disks[self.disk] is not None: status |= 0b00010100
             return status
         
         if self.disks[self.disk] is None:

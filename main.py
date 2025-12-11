@@ -58,16 +58,17 @@ def create_machine(args: argparse.Namespace) -> Cpu:
     #  > $0000 - $00ff: ZERO PAGE
     #  > $0100 - $01ff: HARDWARE STACK
     #  > $0200 - $02ff: BOOTLOADER
-    # $C000 - $C1FF: I/O BLOCK
-    #  > $C000:         SERIAL PORT
-    #  > $C001:         TIMER REG A
-    #  > $C002:         TIMER REG B
-    #  > $C003:         DISK SECTOR
-    #  > $C004:         DISK SELECT
-    #  > $C005:         DISK STATUS
-    #  > $C006 - $C0FF: FUTURE USE
-    #  > $C100 - $C1FF: DISK SECTOR DATA
-    # $C200 - DFFF: UNMAPPED
+    # $C000 - $C1FF: DEVICE BLOCK
+    #  > $C000 - $C0FF: SERIAL DEVICES
+    #    > $C000:         SERIAL PORT
+    #    > $C001:         TIMER REG A
+    #    > $C002:         TIMER REG B
+    #    > $C003:         DISK SECTOR
+    #    > $C004:         DISK SELECT
+    #    > $C005:         DISK STATUS
+    #    > $C006 - $C0FF: MISC SERIAL PORTS
+    #  > $C100 - $C1FF: BLOCK DEVICE R/W
+    # $C200 - DFFF: UNDEFINED
     # $E000 - FFFF: BIOS ROM
     
     cpu = Cpu({
