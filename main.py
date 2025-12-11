@@ -10,12 +10,13 @@ from components.rom import Rom
 from components.timer import Timer
 from components.serial import SerialPort
 from components.block_devices import BootableDrive, NonBootableDrive, \
-    BlockDeviceInterface
+    ExtendedRAM, BlockDeviceInterface
 from components.mm_component import MemoryMappedComponent
 
 device_types = {
     "boot": BootableDrive,
-    "hdd": NonBootableDrive
+    "hdd": NonBootableDrive,
+    "xmem": ExtendedRAM,
 }
 
 def parse_args() -> argparse.Namespace:

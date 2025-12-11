@@ -55,7 +55,7 @@ class NonBootableDrive(SectoredStorage):
             super().__init__(f.read(), bootable=False)
 
 class ExtendedRAM(SectoredStorage):
-    def __init__(self) -> None:
+    def __init__(self, _) -> None:
         # this sounds like a strange thing to inherit from, but it makes sense
         # if you think about it
         super().__init__(bytearray(65536), bootable=False)
