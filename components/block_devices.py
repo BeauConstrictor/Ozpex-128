@@ -5,6 +5,7 @@ from random import randint
 from components.mm_component import MemoryMappedComponent
 
 SECTORED_STORAGE = 0b00010000
+EXTENDED_MEMORY  = 0b00100000
 IS_BOOTABLE      = 0b00000100
 
 class BlockDevice(ABC):
@@ -15,9 +16,10 @@ class BlockDevice(ABC):
     @abstractmethod
     def status(self) -> int: pass
 
-class HardDiskDrive(BlockDevice):
+class SectoredStorage(BlockDevice):
     def __init__(self, data: Annotated[bytearray, 65536], bootable: bool):
         self.data = data
+        self.standard_api = SECTORED_STORAGE
         self.bootable = bootable
         
     def fetch(self, sector: int, addr: int) -> int:
@@ -33,21 +35,28 @@ class HardDiskDrive(BlockDevice):
             pass
         
     def status(self) -> int:
-        status = SECTORED_STORAGE
+        status = self.standard_api
         
         if self.bootable: status |= IS_BOOTABLE
         
         return status
     
-class BootableDrive(HardDiskDrive):
+class BootableDrive(SectoredStorage):
     def __init__(self, path: str):
         with open(path, "rb") as f:
             super().__init__(f.read(), bootable=True)
         
-class NonBootableDrive(HardDiskDrive):
+class NonBootableDrive(SectoredStorage):
     def __init__(self, path: str):
         with open(path, "rb") as f:
             super().__init__(f.read(), bootable=False)
+
+class ExtendedRAM(SectoredStorage):
+    def __init__(self) -> None:
+        # this sounds like a strange thing to inherit from, but it makes sense
+        # if you think about it
+        super().__init__(bytearray(65536), bootable=False)
+        self.standard_api = EXTENDED_MEMORY
 
 class BlockDeviceInterface(MemoryMappedComponent):
     def __init__(self, sector: int, status: int, selector: int, readout: int) -> None:

@@ -97,7 +97,9 @@ def create_machine(args: argparse.Namespace) -> Cpu:
         try:
             cpu.mm_components["blockdevs"].devices[i] = device_types[device_type](device_arg)
         except KeyError:
+            print("\n\n\033[31m", end="", file=stderr)
             print(f"emu: '{device_type}' is not a supported device type.", file=stderr)
+            print("\033[0m", file=stderr)
             exit(1)
     
     cpu.reset()
