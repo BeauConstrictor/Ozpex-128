@@ -1,8 +1,10 @@
+import sys
 import os.path
 import argparse
-from sys import stderr
+import traceback
 from time import sleep
 from typing import Iterator
+from sys import stderr, stdout
 
 from components.cpu import Cpu
 from components.ram import Ram
@@ -148,10 +150,16 @@ def main() -> None:
         cycle += 1
 
 if __name__ == "__main__":
+    print("\033[?1049h", end="")
+    print("\033[2J\033[H", end="")
+    
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\n\033[31m", end="", file=stderr)
-        print(f"emu: ctrl+c exit.", end="", file=stderr)
-        print("\033[0m", file=stderr)
         exit(0)
+    except Exception:
+        print("\033[?1049l", end="")
+        traceback.print_exc(file=stderr)
+        sys.exit(1)
+    finally:
+        print("\033[?1049l", end="")
