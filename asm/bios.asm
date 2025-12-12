@@ -10,7 +10,8 @@ DISK_SELECT = $c004
 DISK_STATUS = $c005
 DISK_DATA   = $c100
 
-PRINT      =   $50
+BYTE_BUILD  =   $49 ; 1 B
+PRINT       =   $50 ; 2 B
 
 ESCAPE_WAIT = 1 ; seconds
 
@@ -24,6 +25,12 @@ reset:
   jsr wait_for_esc
 
   jsr find_bootable_disk
+  jsr print_found_disk
+
+  jsr load_bootloader  
+  jmp BOOT_LOADER
+
+print_found_disk:
   lda #<disk_found_msg
   sta PRINT
   lda #>disk_found_msg
@@ -33,9 +40,9 @@ reset:
   lda DISK_SELECT
   jsr hex_byte
   cpx #"0"
-  beq skip_leading_zero
+  beq _print_found_disk_leading_zero
   stx SERIAL_PORT
-skip_leading_zero:
+_print_found_disk_leading_zero:
   sty SERIAL_PORT
   
   lda #"."
@@ -45,9 +52,7 @@ skip_leading_zero:
   lda #"\n"
   sta SERIAL_PORT
   sta SERIAL_PORT
-
-  jsr load_bootloader  
-  jmp BOOT_LOADER
+  rts
 
 find_bootable_disk:
   lda #0
@@ -102,6 +107,7 @@ bios_menu:
   jsr print
 
   jsr list_devices
+  jsr ask_boot_device
 
   jmp halt
 
@@ -158,6 +164,33 @@ _list_devices_nothing_installed:
   sta SERIAL_PORT
   rts
 
+ask_boot_device:
+  lda #<enter_boot_device_msg
+  sta PRINT
+  lda #>enter_boot_device_msg
+  sta PRINT+1
+  jsr print
+
+  jsr get_byte
+  sta DISK_SELECT
+  lda DISK_STATUS
+  beq _ask_boot_device_nothing_connected_there
+  lda #"\n"
+  sta SERIAL_PORT
+  jsr print_found_disk
+  jsr load_bootloader
+  jmp BOOT_LOADER
+
+  rts
+_ask_boot_device_nothing_connected_there:
+  lda #<no_device_connected_msg
+  sta PRINT
+  lda #>no_device_connected_msg
+  sta PRINT+1
+  jsr print
+  lda #"\n"
+  sta SERIAL_PORT
+  jmp ask_boot_device
 
 ; subroutines
 
@@ -217,6 +250,52 @@ _print_loop:
 _print_done:
   rts
 
+; return (in a) a single key, ignoring spaces
+; modifies: a, x, y
+get_key:
+  lda SERIAL_PORT
+  beq get_key             ; if no char was typed, check again.
+
+  cmp #"0"                ; if less than 0 pressed,
+  bcc get_key             ; try again
+  cmp #"9"+1              ; if greater than 9 pressed,
+  bcs get_key             ; try again
+
+  sta SERIAL_PORT         ; echo back the char.
+
+  cmp #" "                ; if space was pressed,
+  beq get_key             ; wait for the next key.
+
+  rts
+; wait for a key and return (in a) the value of a single hex char
+; modifies: a (duh)
+get_nibble:
+  jsr get_key
+  cmp #$3a
+  bcc _get_nibble_digit
+  sec
+  sbc #"a" - 10
+  rts
+_get_nibble_digit:
+  sbc #"0" - 1
+  rts
+
+; wait for a key and return (in a) the value of a byte (2 hex chars)
+; modifies: a (duh)
+get_byte:
+  ; get the MS nibble and move it to the MS area of the a reg
+  jsr get_nibble
+  asl
+  asl
+  asl
+  asl
+  ; move the MSN to memory
+  sta BYTE_BUILD
+
+  ; get the LSN and combine it with the MSN
+  jsr get_nibble
+  ora BYTE_BUILD
+  rts
 
 ; strings
 
@@ -228,6 +307,10 @@ press_esc_msg:
   .byte "Press ESC to enter the BIOS menu.\n", 0
 bios_menu_msg:
   .byte "Ozpex 128 Emulator BIOS v0.1.0\nInstalled Devices:\n\n", 0
+enter_boot_device_msg:
+  .byte "Enter a device number to boot to: ", 0
+no_device_connected_msg
+  .byte "\nERROR: There is no device connected in that slot.", 0
 
 device_id_table_low:
   .byte 0
