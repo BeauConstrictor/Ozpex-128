@@ -128,6 +128,29 @@ _list_devices_loop:
   lda device_id_table_high,x
   sta PRINT+1
   jsr print
+
+  lda DISK_STATUS
+  and #%00000001
+  beq _list_devices_not_malfunctioning
+  lda #<malfunctioning_msg
+  sta PRINT
+  lda #>malfunctioning_msg
+  sta PRINT+1
+  jsr print
+_list_devices_not_malfunctioning:
+
+  lda DISK_STATUS
+  and #%00000100
+  beq _list_devices_not_bootable
+  lda #<bootable_msg
+  sta PRINT
+  lda #>bootable_msg
+  sta PRINT+1
+  jsr print
+_list_devices_not_bootable:
+
+  lda #"\n"
+  sta SERIAL_PORT
 _list_devices_nothing_installed:
   inc DISK_SELECT
   bne _list_devices_loop
@@ -135,9 +158,12 @@ _list_devices_nothing_installed:
   sta SERIAL_PORT
   rts
 
+
+; subroutines
+
+; finish running programs
 halt:
   jmp halt
-
 
 ; wait until the current block device is not busy
 ; modifies: a
@@ -203,10 +229,6 @@ press_esc_msg:
 bios_menu_msg:
   .byte "Ozpex 128 Emulator BIOS v0.1.0\nInstalled Devices:\n\n", 0
 
-
-
-; device type names
-
 device_id_table_low:
   .byte 0
   .byte <sectored_storage_name
@@ -217,10 +239,14 @@ device_id_table_high:
   .byte >xmem_name
 
 sectored_storage_name:
-  .byte ": Sectored Storage\n", 0
+  .byte ": Sectored Storage", 0
 xmem_name:
-  .byte ": Extended Memory\n", 0
+  .byte ": Extended Memory", 0
 
+bootable_msg:
+  .byte " (Bootable)", 0
+malfunctioning_msg:
+  .byte " (Malfunctioning)", 0
 
   .org $fffc
   .word reset
