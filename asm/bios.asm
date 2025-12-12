@@ -306,7 +306,7 @@ disk_found_msg:
 press_esc_msg:
   .byte "Press ESC to enter the BIOS menu.\n", 0
 bios_menu_msg:
-  .byte "Ozpex 128 Emulator BIOS v0.1.0\nInstalled Devices:\n\n", 0
+  .byte "Ozpex 128 Emulator BIOS v1.0.0\nInstalled Devices:\n\n", 0
 enter_boot_device_msg:
   .byte "Enter a device number to boot to: ", 0
 no_device_connected_msg
