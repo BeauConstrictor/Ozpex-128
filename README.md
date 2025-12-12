@@ -18,7 +18,7 @@ This repository contains:
 
 The core of the 128's philosophy is extensibility, so you can tailor a specific configuration to your needs, and software will accept that system gracefully.
 
-Every Ozpex 128 configuration includes a basic set of resources at predefined memory addresses, which altogether form the *standard environment*. The standard environment is guaranteed to be present on any Ozpex 128 computer, so a running program can rely on it, and query for extra hardware extensions at runtime. This environment features 48KiB of RAM, a serial port for I/O and a hardware timer. For more details on this system, see [the architecture](#the-architecture)
+Every Ozpex 128 configuration includes a basic set of resources at predefined memory addresses, which altogether form the *standard environment*. The standard environment is guaranteed to be present on any Ozpex 128 computer, so a running program can rely on it, and query for extra hardware extensions at runtime. This environment features 48KiB of RAM, a serial port for I/O and a hardware timer. For more details on this system, see [the architecture](#the-architecture).
 
 ## Using the Emulator
 
