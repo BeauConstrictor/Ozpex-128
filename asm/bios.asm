@@ -68,7 +68,7 @@ _find_bootable_disk_loop:
   lda #>disk_not_found_msg
   sta PRINT+1
   jsr print
-  jmp halt
+  jmp bios_menu
 _find_bootable_disk_success:
   rts
 
@@ -300,7 +300,7 @@ get_byte:
 ; strings
 
 disk_not_found_msg:
-  .byte "No boot device found.", 0
+  .byte "No boot device found.\n", 0
 disk_found_msg:
   .byte "Booting disk ", 0
 press_esc_msg:
