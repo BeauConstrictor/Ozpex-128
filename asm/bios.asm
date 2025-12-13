@@ -1,5 +1,7 @@
   .org $e000
 
+DELETE      =   127
+
 BOOT_LOADER = $0200 ; -> $02ff
 
 SERIAL_PORT = $c000
@@ -12,6 +14,9 @@ DISK_DATA   = $c100
 
 BYTE_BUILD  =   $49 ; 1 B
 PRINT       =   $50 ; 2 B
+LINEPTR     =   $52 ; 1 B
+LINEBUF     = $0300 ; 256 B
+
 
 ESCAPE_WAIT = 1 ; seconds
 
@@ -171,6 +176,7 @@ ask_boot_device:
   sta PRINT+1
   jsr print
 
+  jsr buffer_line
   jsr get_byte
   sta DISK_SELECT
   lda DISK_STATUS
@@ -250,27 +256,62 @@ _print_loop:
 _print_done:
   rts
 
-; return (in a) a single key, ignoring spaces
-; modifies: a, x, y
-get_key:
+; buffer a single line of input so you can call get_key on it
+; modifies: a, x
+buffer_line:
+  ldx #0
+_buffer_line_loop:
   lda SERIAL_PORT
-  beq get_key             ; if no char was typed, check again.
+  beq _buffer_line_loop     ; if no key pressed, try again
 
-  cmp #"0"                ; if less than 0 pressed,
-  bcc get_key             ; try again
-  cmp #"9"+1              ; if greater than 9 pressed,
-  bcs get_key             ; try again
+  cmp #"\n"
+  beq _buffer_line_done
 
-  sta SERIAL_PORT         ; echo back the char.
+  cmp #"\b"
+  beq _buffer_line_backspace
+  cmp #DELETE
+  beq _buffer_line_backspace
 
-  cmp #" "                ; if space was pressed,
-  beq get_key             ; wait for the next key.
+  sta SERIAL_PORT          ; output the char
+
+  sta LINEBUF,x            ; move to next space in input array
+  inx
+
+  jmp _buffer_line_loop    ; read the next char
+_buffer_line_done:
+  lda #0                   ; start the get_* commands at char 0
+  sta LINEPTR
+  rts
+_buffer_line_backspace:
+  dex                      ; move back in the input array
+
+  lda #"\b"                ; delete the char in the terminal
+  sta SERIAL_PORT          ; ...
+  pha                      ; ...
+  lda #" "                 ; ...
+  sta SERIAL_PORT          ; ...
+  pla                      ; ...
+  sta SERIAL_PORT          ; ...
+
+  jmp _buffer_line_loop    ; read the next char
+
+; return (in a) a single key, ignoring spaces
+; modifies: a, x
+get_key:
+  ldx LINEPTR
+  lda LINEBUF,x
+  inc LINEPTR
 
   rts
+
 ; wait for a key and return (in a) the value of a single hex char
 ; modifies: a (duh)
 get_nibble:
   jsr get_key
+  cmp #"0"                ; if less than 0 pressed,
+  bcc get_nibble             ; try again
+  cmp #"9"+1              ; if greater than 9 pressed,
+  bcs get_nibble             ; try again
   cmp #$3a
   bcc _get_nibble_digit
   sec
@@ -306,7 +347,7 @@ disk_found_msg:
 press_esc_msg:
   .byte "Press ESC to enter the BIOS menu.\n", 0
 bios_menu_msg:
-  .byte "Ozpex 128 Emulator BIOS v1.0.0\nInstalled Devices:\n\n", 0
+  .byte "Ozpex 128 Emulator BIOS v1.1.0\nInstalled Devices:\n\n", 0
 enter_boot_device_msg:
   .byte "Enter a device number to boot to: ", 0
 no_device_connected_msg
