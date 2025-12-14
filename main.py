@@ -53,6 +53,10 @@ def parse_args() -> argparse.Namespace:
                         action="store_true",
                         help="disable crashes on unknown opcodes")
     
+    parser.add_argument("-s", "--normscreen",
+                        action="store_true",
+                        help="don't switch to the alternate screen buffer")
+    
     parser.add_argument("-g", "--gui",
                         action="store_true",
                         help="start the ozpex 64 gui (ignores other arguments)")
@@ -127,9 +131,7 @@ def simulate(cpu: Cpu, nocrash: bool, debug: bool) -> Iterator[None]:
             cpu.visualise(instr)
             input()
 
-def main() -> None:
-    args = parse_args()
-    
+def main(args: argparse.Namespace) -> None:
     if not os.path.exists(args.bios):
         print("\033[31memu: cannot find the bios rom.\033[0m", file=stderr)
         exit(1)
@@ -150,16 +152,21 @@ def main() -> None:
         cycle += 1
 
 if __name__ == "__main__":
-    print("\033[?1049h", end="")
-    print("\033[2J\033[H", end="")
+    args = parse_args()
+
+    if not args.normscreen:
+        print("\033[?1049h", end="")
+        print("\033[2J\033[H", end="")
     
     try:
-        main()
+        main(args)
     except KeyboardInterrupt:
         exit(0)
     except Exception:
-        print("\033[?1049l", end="")
+        if not args.normscreen:
+            print("\033[?1049l", end="")
         traceback.print_exc(file=stderr)
         sys.exit(1)
     finally:
-        print("\033[?1049l", end="")
+        if not args.normscreen:
+            print("\033[?1049l", end="")
