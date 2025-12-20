@@ -1,7 +1,6 @@
   .org $e000
 
 DELETE      =   127
-BOOTSIG     =  $bb
 
 BOOT_LOADER = $0200 ; -> $02ff
 
@@ -13,10 +12,11 @@ DISK_SELECT = $c004
 DISK_STATUS = $c005
 DISK_DATA   = $c100
 
-BYTE_BUILD  =   $49 ;   1 B
-PRINT       =   $50 ;   2 B
-LINEPTR     =   $52 ;   1 B
+BYTE_BUILD  =   $49 ; 1 B
+PRINT       =   $50 ; 2 B
+LINEPTR     =   $52 ; 1 B
 LINEBUF     = $0300 ; 256 B
+
 
 ESCAPE_WAIT = 1 ; seconds
 
@@ -64,15 +64,8 @@ find_bootable_disk:
   sta DISK_SELECT
 _find_bootable_disk_loop:
   lda DISK_STATUS
-  cmp #%00010000
-  bne _find_bootable_disk_not_bootable
-  lda #$0
-  sta DISK_SECTOR
-  lda DISK_DATA + $ff
-  cmp #$bb
-  bne _find_bootable_disk_not_bootable
-  rts
-_find_bootable_disk_not_bootable:
+  cmp #%00010100
+  beq _find_bootable_disk_success
   inc DISK_SELECT
   bne _find_bootable_disk_loop
   lda #<disk_not_found_msg
@@ -81,6 +74,8 @@ _find_bootable_disk_not_bootable:
   sta PRINT+1
   jsr print
   jmp bios_menu
+_find_bootable_disk_success:
+  rts
 
 load_bootloader:
   lda #0

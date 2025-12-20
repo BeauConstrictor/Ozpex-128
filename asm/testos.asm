@@ -39,6 +39,3 @@ _print_done:
 
 message:
   .byte "Hello, world!\n", 0
-
-  .org $02ff
-  .byte $bb

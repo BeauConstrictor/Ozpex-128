@@ -11,12 +11,13 @@ from components.ram import Ram
 from components.rom import Rom
 from components.timer import Timer
 from components.serial import SerialPort
-from components.block_devices import HardDiskDrive, ExtendedRAM, \
-    BlockDeviceInterface
+from components.block_devices import BootableDrive, NonBootableDrive, \
+    ExtendedRAM, BlockDeviceInterface
 from components.mm_component import MemoryMappedComponent
 
 device_types = {
-    "hdd": HardDiskDrive,
+    "boot": BootableDrive,
+    "hdd": NonBootableDrive,
     "xmem": ExtendedRAM,
 }
 

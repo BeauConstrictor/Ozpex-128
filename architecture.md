@@ -39,7 +39,7 @@ device identifier|device status flags
 
 The device identifier is a value from 0-15 that says which of the standard APIs the device supports. If the value is 0, there is no device occupying the slot. If it is 15, the device does not support any standard API, and sector `FF` will contain a null-terminated string representing whatever free-form identifier the manufacturer chooses for the device. Devices of this type will require special support from drivers or a similar mechanism in the operating system.
 
-The least significant (rightmost) flag bit represents whether the device should be ignored. The motherboard will enable this bit if the device has failed so that software can report the device as present but malfunctioning to the end user. The second bit from the right is the busy flag. is this bit is set, the device is occupied with some job and software should wait before interacting with the device (an interaction counts as any block device-related action with this device set as active, excluding switching to another device or reading the device status). The third bit and fourth flag bits from the right are reserved for future use, and should be ignored.
+The least significant (rightmost) flag bit represents whether the device should be ignored. The motherboard will enable this bit if the device has failed so that software can report the device as present but malfunctioning to the end user. The second bit from the right is the busy flag. is this bit is set, the device is occupied with some job and software should wait before interacting with the device (an interaction counts as any block device-related action with this device set as active, excluding switching to another device or reading the device status). The third bit from the right tells the BIOS whether the device is bootable, so should usually be ignored. Generally, physical switches next to the expansion slots in a motherboard will control this bit. The most significant flag bit is reserved for future use.
 
 ##### Standard APIs
 
@@ -65,7 +65,7 @@ While 48K is generous for a 6502-based system, some programs will need more than
 
 ## Boot Process
 
-When the computer boots, the CPU reads address `0xFFFC-0xFFFD` (contained in the BIOS ROM) and jumps to the address stored there. Usually, this will be address `0xE000`, the start of the BIOS ROM. The BIOS will scan all block devices from 0 to 255 and pick the first device it finds that contains `0xBB` in the last byte of sector 0 (the boot signature). Once it has found a bootable device, it will load sector 0 of that device into address `0x0200` and jump there.
+When the computer boots, the CPU reads address `0xFFFC-0xFFFD` (contained in the BIOS ROM) and jumps to the address stored there. Usually, this will be address `0xE000`, the start of the BIOS ROM. The BIOS will scan all block devices from 0 to 255 and pick the first device it finds that it marked as bootable. Once it has found a bootable device, it will load sector 0 of that device into address `0x0200` and jump there.
 
 This program in this sector is known as the bootloader and is free to do whatever it needs, as it has full control of the computer. Usually, the BIOS will do one of 3 things:
 

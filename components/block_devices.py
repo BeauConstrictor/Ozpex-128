@@ -7,6 +7,7 @@ from components.mm_component import MemoryMappedComponent
 SECTORED_STORAGE  = 1 << 4
 EXTENDED_MEMORY   = 2 << 4
 
+IS_BOOTABLE       = 1 << 2
 IS_BUSY           = 1 << 1
 IS_MALFUNCTIONING = 1 << 0
 
@@ -19,15 +20,15 @@ class BlockDevice(ABC):
     def status(self) -> int: pass
 
 class SectoredStorage(BlockDevice):
-    def __init__(self, data: bytearray):
+    def __init__(self, data: Annotated[bytearray, 65536], bootable: bool):
         self.data = data
         self.standard_api = SECTORED_STORAGE
+        self.bootable = bootable
         
     def fetch(self, sector: int, addr: int) -> int:
         try:
             return self.data[sector * 256 + addr]
         except IndexError:
-            print(sector)
             return randint(0x00, 0xff)
     
     def write(self, sector: int, addr: int, val: int) -> None:
@@ -39,18 +40,25 @@ class SectoredStorage(BlockDevice):
     def status(self) -> int:
         status = self.standard_api
         
+        if self.bootable: status |= IS_BOOTABLE
+        
         return status
-
-class HardDiskDrive(SectoredStorage):
-    def __init__(self, path: str) -> None:
+    
+class BootableDrive(SectoredStorage):
+    def __init__(self, path: str):
         with open(path, "rb") as f:
-            super().__init__(f.read())
+            super().__init__(f.read(), bootable=True)
+        
+class NonBootableDrive(SectoredStorage):
+    def __init__(self, path: str):
+        with open(path, "rb") as f:
+            super().__init__(f.read(), bootable=False)
 
 class ExtendedRAM(SectoredStorage):
     def __init__(self, _) -> None:
         # this sounds like a strange thing to inherit from, but it makes sense
         # if you think about it
-        super().__init__(bytearray(65536))
+        super().__init__(bytearray(65536), bootable=False)
         self.standard_api = EXTENDED_MEMORY
 
 class BlockDeviceInterface(MemoryMappedComponent):

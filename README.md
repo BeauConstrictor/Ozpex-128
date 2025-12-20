@@ -39,24 +39,25 @@ This will download the emulator from the repo hosted on GitHub and build the BIO
 To start the emulator with a bootable disk image:
 
 ```sh
-python3 main -0 hdd:bin/testos
+python3 main -0 boot:bin/testos
 ```
 
 This command will start the emulator with one extension to the standard environment, a bootable disk drive in device slot 0. `bin/testos` is an operating system that repeatedly prints the text 'Hello, World' every 256ms, a good test of the BIOS, disk drive, serial I/O and hardware timer.
 
 Breaking down the argument:
 
-- `-0 hdd:bin/testos` is what installs this drive.
-- `-0` specifies which slot (between 0-255) to place the device in. `hdd` specifies that the device we want to add is a hard disk drive (see [Device Types](#device-types)).
+- `-0 boot:bin/testos` is what installs this drive.
+- `-0` specifies which slot (between 0-255) to place the device in. `boot` specifies that the device we want to add is a bootable disk drive (see [Device Types](#device-types)).
 - `:bin/testos` tells the disk drive to load the disk image at the path `./bin/testos`.
 
 Block devices (e.g., disks, extended RAM) can be passed to the emulator as command-line options or configuration fields depending on how your emulator is structured.
 
 ### Device Types
 
-`hdd` is not the only device that can be installed. This is a list of all the devices supported by the emulator:
+`boot` is not the only device that can be installed. This is a list of all the devices supported by the emulator:
 
-- `hdd:<image>` - A hard disk drive (changes are not replicated to the image file)
+- `boot:<image>` - A disk drive, marked as bootable from the BIOS
+- `hdd:<image>` - A non-bootable disk drive
 - `xmem` - a 64KiB RAM expansion
 
 More devices will be implemented in the future.
