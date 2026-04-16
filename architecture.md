@@ -1,6 +1,6 @@
 # Ozpex 128
 
-The Ozpex 128 is designed to be a successor to the [Ozpex 64](https://github.com/BeauConstrictor/Ozpex-64). The 128 features a more extensible architecture and is suited to running a general-purpose operating system than the 64 was. This computer uses the same 6502 CPU that was found in the 
+The Ozpex 128 is designed to be a successor to the [Ozpex 64](https://github.com/BeauConstrictor/Ozpex-64). The 128 features a more extensible architecture and is more suited to running a general-purpose operating system than the 64 was. This computer uses the same 6502 CPU that was found in the original Ozpex 64.
 
 This repository contains the architecture of the computer, as well as an accompanying emulator.
 
